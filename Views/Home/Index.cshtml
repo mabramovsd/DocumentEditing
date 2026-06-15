@@ -3,13 +3,24 @@
 }
 
 <div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    <h1 class="display-4">Welcome to document editing</h1>
+    <p>This is where the magic happens... or will happen. 
+        For now, you can open existing documents to edit them. 
+        The 'create new' and 'history' buttons are on their way, along with everything else. 
+        The future is under construction.
+    </p>
 
     <script>
-        let name = prompt('Введите ваше имя');
-        console.log(name);
+        let name = localStorage.getItem('user');
 
-        localStorage.user = name;
+        if (!name || name.trim() === '') {
+            name = prompt('Please enter your name');
+
+            if (name !== null && name.trim() !== '') {
+                localStorage.setItem('user', name.trim());
+            } else {
+                console.log('User did not provide a name.');
+            }
+        }
     </script>
 </div>

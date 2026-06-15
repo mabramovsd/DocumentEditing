@@ -158,6 +158,7 @@ namespace DocumentEditing.Controllers
             return Ok();
         }
 
+        //Disable caching for error messages
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         [HttpGet("Error")]
         public IActionResult Error()
