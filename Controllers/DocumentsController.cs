@@ -22,14 +22,17 @@ namespace DocumentEditing.Controllers
 
         private readonly ILogger<DocumentsController> _logger;
         private readonly DocumentLockService _documentLockService;
+        private readonly IDocumentSessionService _documentSessionService;
+
         private static readonly object _syncRoot = new object();
 
-        public DocumentsController(ILogger<DocumentsController> logger, DocumentLockService documentLockService)
+        public DocumentsController(ILogger<DocumentsController> logger, DocumentLockService documentLockService, IDocumentSessionService documentSessionService)
         {
             _documents = new List<string>();
             _dir = "C:\\Users\\abram\\source\\repos\\DocumentEditing\\Documents";
             _logger = logger;
             _documentLockService = documentLockService;
+            _documentSessionService = documentSessionService;
 
             if (!Directory.Exists(_dir))
                 Directory.CreateDirectory(_dir);
@@ -66,7 +69,8 @@ namespace DocumentEditing.Controllers
             // Блокируем доступ к словарю ActiveDocuments
             lock (_syncRoot)
             {
-                if (!Global.ActiveDocuments.ContainsKey(id))
+                //ToDo: add user here
+                if (_documentSessionService.CanUserEdit(id, ""))
                 {
                     canEdit = true;
                 }
@@ -135,17 +139,7 @@ namespace DocumentEditing.Controllers
                 {
                     if (!string.IsNullOrEmpty(fileName) && !string.IsNullOrEmpty(user))
                     {
-                        if (Global.ActiveDocuments.ContainsKey(fileName) &&
-                            Global.ActiveDocuments[fileName].Contains(user))
-                        {
-                            Global.ActiveDocuments[fileName].Remove(user);
-                        }
-
-                        if (Global.ActiveDocuments.ContainsKey(fileName) &&
-                            Global.ActiveDocuments[fileName].Count == 0)
-                        {
-                            Global.ActiveDocuments.Remove(fileName);
-                        }
+                        _documentSessionService.RemoveEditor(fileName, user);
                     }
                 }
             }

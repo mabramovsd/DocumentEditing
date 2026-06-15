@@ -4,7 +4,6 @@
     {
         public string FileName { get; set; }
         public string User { get; set; }
-
-        public Dictionary<string, List<string>> ActiveDocuments { get; set; }
+        public IReadOnlyCollection<string> ActiveEditors { get; set; }
     }
 }

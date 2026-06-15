@@ -1,4 +1,5 @@
 ﻿using DocumentEditing.Models.Messages;
+using DocumentEditing.Repositories;
 using Microsoft.AspNetCore.SignalR;
 using System.Text.Json;
 
@@ -9,46 +10,40 @@ namespace DocumentEditing.Libs
     /// </summary>
     public class DocumentHub : Hub
     {
+        private readonly IDocumentSessionRepository _repository;
+        public DocumentHub(IDocumentSessionRepository repository) 
+        {
+            _repository = repository;
+        }
+
         public async Task Send(string message)
         {
             try
             {
-                // Создаем экземпляр настроек
+                // Case insensitive paramaters (fileName = FileName)
                 var options = new JsonSerializerOptions
                 {
-                    // Делаем десериализацию нечувствительной к регистру
                     PropertyNameCaseInsensitive = true
                 };
 
-                // Используем эти настройки при вызове Deserialize
-                // 1. Десериализуем входящее сообщение в объект
+                //Unserialize incoming message
                 var incomingMsg = JsonSerializer.Deserialize<IncomingMessage>(message, options);
 
                 if (incomingMsg != null && !string.IsNullOrEmpty(incomingMsg.FileName) && !string.IsNullOrEmpty(incomingMsg.User))
                 {
-                    // 2. Обновляем Global.ActiveDocuments (ваш текущий код)
-                    if (!Global.ActiveDocuments.ContainsKey(incomingMsg.FileName))
-                    {
-                        Global.ActiveDocuments.Add(incomingMsg.FileName, new List<string> { incomingMsg.User });
-                    }
-                    else if (!Global.ActiveDocuments[incomingMsg.FileName].Contains(incomingMsg.User))
-                    {
-                        Global.ActiveDocuments[incomingMsg.FileName].Add(incomingMsg.User);
-                    }
+                    _repository.AddEditor(incomingMsg.FileName, incomingMsg.User);
 
                     // 3. Создаем объект для отправки на клиент
                     var outgoingMsg = new OutgoingMessage
                     {
                         FileName = incomingMsg.FileName,
                         User = incomingMsg.User,
-                        // Передаем актуальное состояние словаря
-                        ActiveDocuments = Global.ActiveDocuments
+                        ActiveEditors = _repository.GetEditors(incomingMsg.FileName)
                     };
 
-                    // 4. Сериализуем объект в JSON-строку
                     string updatedMessage = JsonSerializer.Serialize(outgoingMsg);
 
-                    // 5. Отправляем новую строку всем клиентам
+                    //Send to all clients
                     await this.Clients.All.SendAsync("Receive", updatedMessage);
                 }
                 else
