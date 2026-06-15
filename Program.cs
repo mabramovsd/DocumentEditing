@@ -1,10 +1,13 @@
 using DocumentEditing.Libs;
+using DocumentEditing.Repositories;
 using DocumentEditing.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddSignalR();
+builder.Services.AddSingleton<IDocumentSessionRepository, InMemoryDocumentSessionRepository>();
+builder.Services.AddSingleton<IDocumentSessionService, DocumentSessionService>();
 builder.Services.AddSingleton<DocumentLockService>();
 
 var app = builder.Build();
