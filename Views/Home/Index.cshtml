@@ -11,14 +11,16 @@
     </p>
 
     <script>
-        let name = localStorage.getItem('user');
+        let name = sessionStorage.getItem('user');
 
         if (!name || name.trim() === '') {
             name = prompt('Please enter your name');
 
             if (name !== null && name.trim() !== '') {
-                localStorage.setItem('user', name.trim());
+                sessionStorage.setItem('user', name.trim());
             } else {
+                alert('We will mark you as guest');
+                sessionStorage.setItem('user', 'guest');
                 console.log('User did not provide a name.');
             }
         }
