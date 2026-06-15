@@ -213,8 +213,7 @@ project.lock.json
 AppPackages/
 
 # Internal files for project
-Audit/
-Documents/
+*.txt
 
 #####
 # End of core ignore list, below put you custom 'per project' settings (patterns or path)

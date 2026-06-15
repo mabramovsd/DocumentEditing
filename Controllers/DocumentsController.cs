@@ -24,8 +24,6 @@ namespace DocumentEditing.Controllers
         private readonly DocumentLockService _documentLockService;
         private readonly IDocumentSessionService _documentSessionService;
 
-        private static readonly object _syncRoot = new object();
-
         public DocumentsController(ILogger<DocumentsController> logger, DocumentLockService documentLockService, IDocumentSessionService documentSessionService)
         {
             _documents = new List<string>();
@@ -57,36 +55,42 @@ namespace DocumentEditing.Controllers
         public IActionResult Edit(string id)
         {
             if (string.IsNullOrEmpty(id))
-                return BadRequest("Имя файла не указано.");
+                return BadRequest("File name is empty");
 
             var filePath = Path.Combine(_dir, id);
-            if (!System.IO.File.Exists(filePath) || !id.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
-                return NotFound("Файл не найден.");
+            if (!id.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
+                return NotFound("File have wrong extension");
 
-
-            bool canEdit = false;
-
-            // Блокируем доступ к словарю ActiveDocuments
-            lock (_syncRoot)
-            {
-                //ToDo: add user here
-                if (_documentSessionService.CanUserEdit(id, ""))
-                {
-                    canEdit = true;
-                }
-            }
             bool lockAcquired = _documentLockService.TryAcquireWriteLock(id);
-
-            var model = DocumentModel.FillDataFromFile(_dir, id);
-            model.IsReadOnly = !canEdit;
-            model.IsReadOnly = !lockAcquired;
-
-            if (!canEdit)
+            try
             {
-                ViewBag.Message = "Сорри, документ уже открыт на редактирование.";
-            }
+                var model = DocumentModel.FillDataFromFile(_dir, id);
+                model.IsReadOnly = !lockAcquired;
 
-            return View(model);
+                if (!lockAcquired)
+                {
+                    ViewBag.Message = "Sorry, document is already opened";
+                }
+
+                return View(model);
+            }
+            catch (IOException ex) when (
+                ex is FileNotFoundException ||
+                ex is DirectoryNotFoundException)
+            {
+                if (lockAcquired)
+                {
+                    _documentLockService.ReleaseWriteLock(id);
+                }
+
+                _logger.LogWarning($"Try to open file that doesn't exist: {id}. Error: {ex.Message}");
+                return NotFound("File not found");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning($"Try to open file wasn't successfull: {id}. Error: {ex.Message}");
+                return BadRequest("Error");
+            }
         }
 
         // POST: /Documents/Save
@@ -126,7 +130,7 @@ namespace DocumentEditing.Controllers
         public IActionResult OnPageClose([FromBody] CloseDocumentModel request)
         {
             if (request == null || string.IsNullOrWhiteSpace(request.FileName))
-                return BadRequest("Некорректные данные: имя файла обязательно.");
+                return BadRequest("Incorrect Data: FileName is empty");
 
             try
             {
@@ -134,18 +138,15 @@ namespace DocumentEditing.Controllers
                 string user = request.User ?? "";
 
                 _documentLockService.ReleaseWriteLock(fileName);
-
-                lock (_syncRoot)
-                {
-                    if (!string.IsNullOrEmpty(fileName) && !string.IsNullOrEmpty(user))
-                    {
-                        _documentSessionService.RemoveEditor(fileName, user);
-                    }
-                }
+                _documentSessionService.RemoveEditor(fileName, user);
             }
             catch (JsonException ex)
             {
-                Console.WriteLine("Ошибка при разборе JSON: " + ex.Message);
+                Console.WriteLine("Error with JSON parsing: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
             }
 
             _logger.LogInformation($"Пользователь закрыл документ: {request.FileName}");
