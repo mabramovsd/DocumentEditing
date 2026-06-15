@@ -35,14 +35,20 @@
 
         const messageToSend = JSON.stringify({ fileName, user });
 
-        const response = await fetch('/Documents/Close', {
-            method: 'POST',
-            body: messageToSend,
-            headers: { 'Content-Type': 'application/json' },
-            keepalive: true
-        });
+        try {
+            await fetch('/Documents/Close', {
+                method: 'POST',
+                body: messageToSend,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                keepalive: true
+            });
 
-        console.log('Close signal sent:', response);
+            console.log('Successfully sent close signal.');
+        } catch (error) {
+            console.error("Error while sending close signal:", error.message);
+        }
     }
 
     //Save content after edit
