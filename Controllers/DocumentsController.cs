@@ -39,7 +39,6 @@ namespace DocumentEditing.Controllers
                 Directory.CreateDirectory(_dir);
         }
 
-        // GET: /Documents
         [HttpGet]
         public IActionResult Index()
         {
@@ -53,7 +52,6 @@ namespace DocumentEditing.Controllers
             return View(model);
         }
 
-        // GET: /Documents/Edit/{id}
         [HttpGet("Edit/{id}")]
         public IActionResult Edit(string id)
         {
@@ -96,7 +94,6 @@ namespace DocumentEditing.Controllers
             }
         }
 
-        // POST: /Documents/Save
         [HttpPost("Save")]
         public IActionResult Save([FromBody] SaveDocumentModel model)
         {
@@ -117,9 +114,9 @@ namespace DocumentEditing.Controllers
                 }
 
                 System.IO.File.WriteAllText(filePath, model.Content);
-                _logger.LogInformation($"Файл {model.FileName} успешно сохранён.");
+                _logger.LogInformation($"File {model.FileName} successfully saved");
 
-                return Ok(new { message = "Файл сохранён", fileName = model.FileName });
+                return Ok(new { message = "File successfully saved", fileName = model.FileName });
             }
             catch (Exception ex)
             {
@@ -128,7 +125,6 @@ namespace DocumentEditing.Controllers
             }
         }
 
-        // POST: /Documents/Close
         [HttpPost("Close")]
         public IActionResult OnPageClose([FromBody] CloseDocumentModel request)
         {
