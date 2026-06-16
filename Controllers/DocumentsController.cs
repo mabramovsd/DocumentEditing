@@ -2,6 +2,7 @@ using DocumentEditing.Libs;
 using DocumentEditing.Models;
 using DocumentEditing.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using System.Diagnostics;
 using System.Text.Json;
 
@@ -15,20 +16,22 @@ namespace DocumentEditing.Controllers
         /// Folder with documents to edit
         /// </summary>
         private readonly string _dir;
-        /// <summary>
-        /// List of documents (refreshed every time we opened /Documents)
-        /// </summary>
-        private List<string> _documents;
 
         private readonly ILogger<DocumentsController> _logger;
+        private readonly IAuditService _auditService;
         private readonly DocumentLockService _documentLockService;
         private readonly IDocumentSessionService _documentSessionService;
 
-        public DocumentsController(ILogger<DocumentsController> logger, DocumentLockService documentLockService, IDocumentSessionService documentSessionService)
+        public DocumentsController(
+            ILogger<DocumentsController> logger, 
+            DocumentLockService documentLockService,
+            IDocumentSessionService documentSessionService,
+            IOptions<DirectorySettings> directorySettings,
+            IAuditService auditService)
         {
-            _documents = new List<string>();
-            _dir = "C:\\Users\\abram\\source\\repos\\DocumentEditing\\Documents";
+            _dir = directorySettings.Value.Documents;
             _logger = logger;
+            _auditService = auditService;
             _documentLockService = documentLockService;
             _documentSessionService = documentSessionService;
 
@@ -40,13 +43,13 @@ namespace DocumentEditing.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            _documents = Directory
+            var documents = Directory
                 .GetFiles(_dir)
                 .Where(f => f.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
                 .Select(f => Path.GetFileName(f))
                 .ToList();
 
-            var model = new DocumentsModel { Documents = _documents };
+            var model = new DocumentsModel { Documents = documents };
             return View(model);
         }
 
@@ -109,7 +112,7 @@ namespace DocumentEditing.Controllers
 
                 if (changes.Count > 0)
                 {
-                    Audit.AddData(model.FileName, changes);
+                    _auditService.AddData(model.FileName, changes);
                     _logger.LogInformation($"Зафиксированы изменения в файле {model.FileName}.");
                 }
 

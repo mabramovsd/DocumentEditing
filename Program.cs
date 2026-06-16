@@ -4,12 +4,13 @@ using DocumentEditing.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.Configure<DirectorySettings>(builder.Configuration.GetSection("Directories"));
 builder.Services.AddControllersWithViews();
 builder.Services.AddSignalR();
+builder.Services.AddSingleton<IAuditService, AuditService>();
 builder.Services.AddSingleton<IDocumentSessionRepository, InMemoryDocumentSessionRepository>();
 builder.Services.AddSingleton<IDocumentSessionService, DocumentSessionService>();
 builder.Services.AddSingleton<DocumentLockService>();
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
