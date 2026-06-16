@@ -9,4 +9,42 @@
     {
         <p><a href="Documents/Edit/@item">@item</a></p>
     }
+
+    <button id="CreateNewBtn">Create New</button>
 </div>
+
+<script>
+    document.getElementById('CreateNewBtn').addEventListener('click', function () {
+
+        const fileName = prompt("Please enter file name:");
+        const userFromStorage = sessionStorage.getItem('user');
+
+        if (fileName === null || fileName.trim() === '') {
+            alert("File Name can't be empty");
+            return;
+        }
+
+        // Add extension
+        const finalFileName = fileName.trim().match(/\.[0-9a-z]+$/i) ? fileName.trim() : fileName.trim() + '.txt';
+
+        fetch('Documents/Create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ fileName: finalFileName, content: "", user: userFromStorage })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error when creating file');
+                }
+                return response.json();
+            })
+            .then(data => {
+                window.location.href = data.redirectUrl;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    });
+</script>

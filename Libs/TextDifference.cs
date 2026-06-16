@@ -4,56 +4,54 @@
     {
         public static List<string> GetChangesList(string textOld, string textNew)
         {
-            // Разбиваем тексты на строки
+            // Split by lines
             string[] oldLines = textOld.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
             string[] newLines = textNew.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
 
-            int i = 0, j = 0;
+            int oldIndex = 0, newIndex = 0;
             var changes = new List<string>();
 
-            while (i < oldLines.Length && j < newLines.Length)
+            while (oldIndex < oldLines.Length && newIndex < newLines.Length)
             {
-                if (oldLines[i] == newLines[j])
+                if (oldLines[oldIndex] == newLines[newIndex])
                 {
-                    // Строки совпадают, двигаем оба указателя
-                    i++;
-                    j++;
+                    oldIndex++;
+                    newIndex++;
                 }
                 else
                 {
-                    // Строки различаются. Проверяем, что произошло.
-                    // Это упрощенная логика. В реальном diff нужно смотреть вперед.
-                    if (j + 1 < newLines.Length && oldLines[i] == newLines[j + 1])
+                    // Looks like new line
+                    if (newIndex + 1 < newLines.Length && oldLines[oldIndex] == newLines[newIndex + 1])
                     {
-                        // Похоже на добавление строки в newLines
-                        changes.Add($"PositionOld: '{i}', PositionNew: '{j}', Added: '{newLines[j]}'");
-                        j++; // Двигаем только указатель нового текста
+                        changes.Add($"PositionOld: '{oldIndex}', PositionNew: '{newIndex}', Added: '{newLines[newIndex]}'");
+                        newIndex++;
                     }
-                    else if (i + 1 < oldLines.Length && oldLines[i + 1] == newLines[j])
+                    //Looks like line was removed
+                    else if (oldIndex + 1 < oldLines.Length && oldLines[oldIndex + 1] == newLines[newIndex])
                     {
-                        // Похоже на удаление строки из oldLines
-                        changes.Add($"PositionOld: '{i}', PositionNew: '{j}', Deleted: '{oldLines[i]}'");
-                        i++; // Двигаем только указатель старого текста
+                        changes.Add($"PositionOld: '{oldIndex}', PositionNew: '{newIndex}', Deleted: '{oldLines[oldIndex]}'");
+                        oldIndex++;
                     }
+                    //Line was changed
                     else
                     {
-                        // Скорее всего, замена
-                        changes.Add($"PositionOld: '{i}', PositionNew: '{j}', Changed: '{oldLines[i]}' -> '{newLines[j]}'");
-                        i++;
-                        j++;
+                        changes.Add($"PositionOld: '{oldIndex}', PositionNew: '{newIndex}', Changed: '{oldLines[oldIndex]}' -> '{newLines[newIndex]}'");
+                        oldIndex++;
+                        newIndex++;
                     }
                 }
             }
-            // Обрабатываем оставшиеся строки (добавления в конце или удаления в конце)
-            while (j < newLines.Length)
+
+            // Adding/removing from the end
+            while (newIndex < newLines.Length)
             {
-                changes.Add($"PositionOld: '{i}', PositionNew: '{j}', Added: '{newLines[j]}'");
-                j++;
+                changes.Add($"PositionOld: '{oldIndex}', PositionNew: '{newIndex}', Added: '{newLines[newIndex]}'");
+                newIndex++;
             }
-            while (i < oldLines.Length)
+            while (oldIndex < oldLines.Length)
             {
-                changes.Add($"PositionOld: '{i}', PositionNew: '{j}', Deleted: '{oldLines[i]}'");
-                i++;
+                changes.Add($"PositionOld: '{oldIndex}', PositionNew: '{newIndex}', Deleted: '{oldLines[oldIndex]}'");
+                oldIndex++;
             }
 
             return changes;

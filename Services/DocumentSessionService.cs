@@ -1,5 +1,4 @@
 ﻿using DocumentEditing.Repositories;
-using Microsoft.AspNetCore.Http;
 
 namespace DocumentEditing.Services
 {
@@ -27,6 +26,17 @@ namespace DocumentEditing.Services
             return
                 _repository.IsUserEditing(documentId, userId) || 
                 _repository.GetEditors(documentId).Count == 0;
+        }
+
+        public bool CreateNewDocument(string documentPath)
+        {
+            if (!File.Exists(documentPath))
+            {
+                File.Create(documentPath);
+                return true;
+            }
+
+            return false;
         }
     }
 }

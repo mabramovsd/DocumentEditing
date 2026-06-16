@@ -23,5 +23,12 @@
         /// <param name="userId">User</param>
         /// <returns><see langword="true"/>, if user can edit this document; else <see langword="false"/>.</returns>
         bool CanUserEdit(string documentId, string userId);
+
+        /// <summary>
+        /// Creating new document
+        /// </summary>
+        /// <param name="documentPath">File address</param>
+        /// <returns></returns>
+        bool CreateNewDocument(string documentPath);
     }
 }
