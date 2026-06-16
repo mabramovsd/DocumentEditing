@@ -1,5 +1,7 @@
+using DocumentEditing.Libs;
 using DocumentEditing.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using System.Diagnostics;
 
 namespace DocumentEditing.Controllers
@@ -11,17 +13,14 @@ namespace DocumentEditing.Controllers
         /// Folder with documents to edit
         /// </summary>
         private readonly string _dir;
-        /// <summary>
-        /// List of documents (refreshed every time we opened /Audit)
-        /// </summary>
-        private List<string> _documents;
 
         private readonly ILogger<AuditController> _logger;
 
-        public AuditController(ILogger<AuditController> logger)
+        public AuditController(
+            ILogger<AuditController> logger,
+            IOptions<DirectorySettings> directorySettings)
         {
-            _documents = new List<string>();
-            _dir = "C:\\Users\\abram\\source\\repos\\DocumentEditing\\Audit";
+            _dir = directorySettings.Value.Audit;
             _logger = logger;
 
             if (!Directory.Exists(_dir))
@@ -31,13 +30,13 @@ namespace DocumentEditing.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            _documents = Directory
+            var documents = Directory
                 .GetFiles(_dir)
                 .Where(f => f.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
                 .Select(f => Path.GetFileName(f))
                 .ToList();
 
-            var model = new DocumentsModel { Documents = _documents };
+            var model = new DocumentsModel { Documents = documents };
             return View(model);
         }
 
@@ -47,7 +46,6 @@ namespace DocumentEditing.Controllers
             if (string.IsNullOrEmpty(id))
                 return BadRequest("File name is empty");
 
-            var filePath = Path.Combine(_dir, id);
             if (!id.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
                 return NotFound("File have wrong extension");
             try 

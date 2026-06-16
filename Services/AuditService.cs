@@ -1,22 +1,24 @@
-﻿namespace DocumentEditing.Libs
+﻿using DocumentEditing.Libs;
+using Microsoft.Extensions.Options;
+
+namespace DocumentEditing.Services
 {
-    public static class Audit
+    public class AuditService : IAuditService
     {
-        private static string _auditDir = "C:\\Users\\abram\\source\\repos\\DocumentEditing\\Audit";
- 
-        /// <summary>
-        /// Adding data to audit file
-        /// </summary>
-        /// <param name="fileName">File we edit</param>
-        /// <param name="dataToAdd">Changed data</param>
-        /// <returns></returns>
-        public static bool AddData(string fileName, List<string> dataToAdd)
+        private readonly string _auditDir;
+
+        public AuditService(IOptions<DirectorySettings> directorySettings) 
+        {
+            _auditDir = directorySettings.Value.Audit;
+        }
+
+        public bool AddData(string fileName, List<string> dataToAdd)
         {
             var filePath = Path.Combine(_auditDir, fileName);
 
             if (!File.Exists(filePath))
             {
-                using (File.Create(filePath)) 
+                using (File.Create(filePath))
                 {
                 }
             }
@@ -25,7 +27,7 @@
             File.AppendAllText(filePath, Environment.NewLine);
             File.AppendAllText(filePath, "Changes:");
             File.AppendAllText(filePath, Environment.NewLine);
-            File.AppendAllText(filePath, string.Join(Environment.NewLine,dataToAdd));
+            File.AppendAllText(filePath, string.Join(Environment.NewLine, dataToAdd));
             File.AppendAllText(filePath, Environment.NewLine);
             File.AppendAllText(filePath, Environment.NewLine);
 
