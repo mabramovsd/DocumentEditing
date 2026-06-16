@@ -1,0 +1,9 @@
+﻿@{
+    ViewData["Title"] = "Audit of document";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Changes of '@Model.FileName' </h1>
+
+    <textarea id="MainText" style="width:1000px; height: 600px;" readonly>@Model.Content</textarea>
+</div>
