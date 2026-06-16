@@ -1,0 +1,12 @@
+﻿@{
+    ViewData["Title"] = "Audit";
+}
+
+<div class="text-center">
+    <h1 class="display-4">List of documents</h1>
+    
+    @foreach (var item in Model.Documents)
+    {
+        <p><a href="Audit/Details/@item">@item</a></p>
+    }
+</div>
