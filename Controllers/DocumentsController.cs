@@ -94,6 +94,30 @@ namespace DocumentEditing.Controllers
             }
         }
 
+
+        [HttpPost("Create")]
+        public IActionResult Create([FromBody] SaveDocumentModel model)
+        {
+            if (string.IsNullOrWhiteSpace(model.FileName))
+                return BadRequest("File Name is empty");
+
+            var filePath = Path.Combine(_dir, model.FileName);
+
+            try
+            {
+                _documentSessionService.CreateNewDocument(filePath);
+                //_auditService.AddData(model.FileName, changes);
+                _logger.LogInformation($"File {model.FileName} successfully created");
+
+                return Ok(new { message = "File successfully created", fileName = model.FileName, redirectUrl = "Documents" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error when creating file {model.FileName}.");
+                return StatusCode(500, new { error = "Error when creating file" });
+            }
+        }
+
         [HttpPost("Save")]
         public IActionResult Save([FromBody] SaveDocumentModel model)
         {
