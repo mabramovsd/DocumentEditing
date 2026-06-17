@@ -9,20 +9,62 @@
         The 'create new' and 'history' buttons are on their way, along with everything else. 
         The future is under construction.
     </p>
-
     <script>
-        let name = sessionStorage.getItem('user');
+        async function loginToApi(username) {
+            //empty password because of model contract
+            const messageToSend = JSON.stringify({ email: username, password: '' });
 
-        if (!name || name.trim() === '') {
-            name = prompt('Please enter your name');
+            try {
+                const response = await fetch('/Auth/Login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: messageToSend
+                });
 
-            if (name !== null && name.trim() !== '') {
-                sessionStorage.setItem('user', name.trim());
-            } else {
-                alert('We will mark you as guest');
-                sessionStorage.setItem('user', 'guest');
-                console.log('User did not provide a name.');
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                return data.token;
+
+            } catch (error) {
+                console.error("Failed to log in:", error);
+                return null;
             }
         }
+
+        async function initializeUser() {
+            let name = sessionStorage.getItem('user');
+
+            if (!name || name.trim() === '') {
+                name = prompt('Please enter your name');
+
+                if (name !== null && name.trim() !== '') {
+                    name = name.trim();
+                    sessionStorage.setItem('user', name);
+
+                    const token = await loginToApi(name);
+
+                    if (token) {
+                        localStorage.setItem('authToken', token);
+                        console.log('Successfully logged in. Token received.');
+                    } else {
+                        console.warn('Logged in locally, but failed to get API token.');
+                    }
+
+                } else {
+                    alert('We will mark you as guest');
+                    sessionStorage.setItem('user', 'guest');
+                    console.log('User did not provide a name.');
+                }
+            } else {
+                console.log(`Welcome back, ${name}.`);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initializeUser();
+        });
     </script>
 </div>

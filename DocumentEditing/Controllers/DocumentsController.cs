@@ -1,6 +1,7 @@
 using DocumentEditing.Libs;
 using DocumentEditing.Models;
 using DocumentEditing.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using System.Diagnostics;
@@ -51,6 +52,7 @@ namespace DocumentEditing.Controllers
         }
 
         [HttpGet("Edit/{id}")]
+        [Authorize]
         public IActionResult Edit(string id)
         {
             if (string.IsNullOrEmpty(id))
@@ -59,6 +61,9 @@ namespace DocumentEditing.Controllers
             var filePath = Path.Combine(_dir, id);
             if (!id.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
                 return NotFound("File have wrong extension");
+
+            //ToDo: Handle it
+            var user = HttpContext.User;
 
             bool lockAcquired = _documentLockService.TryAcquireWriteLock(id);
             try
