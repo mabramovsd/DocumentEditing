@@ -32,11 +32,18 @@ namespace DocumentEditing.Controllers
         {
             var documents = Directory
                 .GetFiles(_dir)
-                .Where(f => f.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
-                .Select(f => Path.GetFileName(f))
+                .Select(f => new FileInfo(f))
+                .Where(fi => fi.Extension.Equals(".txt", StringComparison.OrdinalIgnoreCase))
+                .Select(fi => new DocumentModelForList
+                {
+                    FileName = fi.Name,
+                    CreationTime = fi.CreationTime,
+                    LastWriteTime = fi.LastWriteTime,
+                    SizeKB = Math.Round((double)fi.Length / 1024, 2)
+                })
                 .ToList();
 
-            var model = new DocumentsModel { Documents = documents };
+            var model = new DocumentsModel { Path = _dir, Documents = documents };
             return View(model);
         }
 

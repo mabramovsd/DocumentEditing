@@ -15,7 +15,7 @@
 
     sessionStorage.setItem('file', '@Model.FileName');
 
-    // Подписываемся на событие beforeunload
+    // save document before close window
     window.addEventListener('beforeunload', sendCloseSignal);
 
     let isReadOnly = '@Model.IsReadOnly' == 'True';
@@ -23,7 +23,7 @@
         document.getElementById('MainText').readOnly = true;
     }
 
-    // Функция для отправки сигнала на сервер
+    // send signal to close doc
     async function sendCloseSignal() {
         const fileName = sessionStorage.getItem('file');
         const user = sessionStorage.getItem('user');
@@ -98,7 +98,7 @@
                 users = users.join(", ");
                 document.getElementById("Editors").innerHTML = "Now edit: " + users;
             } catch (error) {
-                console.error("Ошибка при обработке сообщения:", error.message);
+                console.error("Error while parsing message:", error.message);
                 document.getElementById("Editors").innerHTML = "Unknown editors";
             }
         });
