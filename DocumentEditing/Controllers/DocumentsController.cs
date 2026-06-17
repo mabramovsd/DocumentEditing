@@ -21,19 +21,22 @@ namespace DocumentEditing.Controllers
         private readonly IAuditService _auditService;
         private readonly DocumentLockService _documentLockService;
         private readonly IDocumentSessionService _documentSessionService;
+        private readonly IDocumentFileSystemService _documentFileSystemService;
 
         public DocumentsController(
             ILogger<DocumentsController> logger, 
             DocumentLockService documentLockService,
             IDocumentSessionService documentSessionService,
             IOptions<DirectorySettings> directorySettings,
-            IAuditService auditService)
+            IAuditService auditService,
+            [FromKeyedServices(DependencyKeys.DocumentsService)] IDocumentFileSystemService documentFileSystemService)
         {
             _dir = directorySettings.Value.Documents;
             _logger = logger;
             _auditService = auditService;
             _documentLockService = documentLockService;
             _documentSessionService = documentSessionService;
+            _documentFileSystemService = documentFileSystemService;
 
             if (!Directory.Exists(_dir))
                 Directory.CreateDirectory(_dir);
@@ -42,13 +45,8 @@ namespace DocumentEditing.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            var documents = Directory
-                .GetFiles(_dir)
-                .Where(f => f.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
-                .Select(f => Path.GetFileName(f))
-                .ToList();
-
-            var model = new DocumentsModel { Documents = documents };
+            var documents = _documentFileSystemService.GetDocumentsList();
+            var model = new DocumentsModel { Path = _dir, Documents = documents };
             return View(model);
         }
 

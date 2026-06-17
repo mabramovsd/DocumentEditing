@@ -2,6 +2,7 @@ namespace DocumentEditing.Models
 {
     public class DocumentsModel
     {
-        public List<string>? Documents { get; set; }
+        public string? Path { get; set; }
+        public List<DocumentModelForList>? Documents { get; set; }
     }
 }

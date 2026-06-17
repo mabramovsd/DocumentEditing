@@ -1,5 +1,6 @@
 using DocumentEditing.Libs;
 using DocumentEditing.Models;
+using DocumentEditing.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using System.Diagnostics;
@@ -15,13 +16,16 @@ namespace DocumentEditing.Controllers
         private readonly string _dir;
 
         private readonly ILogger<AuditController> _logger;
+        private readonly IDocumentFileSystemService _documentFileSystemService;
 
         public AuditController(
             ILogger<AuditController> logger,
+            [FromKeyedServices(DependencyKeys.AuditService)] IDocumentFileSystemService documentFileSystemService,
             IOptions<DirectorySettings> directorySettings)
         {
             _dir = directorySettings.Value.Audit;
             _logger = logger;
+            _documentFileSystemService = documentFileSystemService;
 
             if (!Directory.Exists(_dir))
                 Directory.CreateDirectory(_dir);
@@ -30,13 +34,9 @@ namespace DocumentEditing.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            var documents = Directory
-                .GetFiles(_dir)
-                .Where(f => f.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
-                .Select(f => Path.GetFileName(f))
-                .ToList();
+            var documents = _documentFileSystemService.GetDocumentsList();
 
-            var model = new DocumentsModel { Documents = documents };
+            var model = new DocumentsModel { Path = _dir, Documents = documents };
             return View(model);
         }
 
