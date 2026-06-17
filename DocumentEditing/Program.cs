@@ -8,9 +8,13 @@ builder.Services.Configure<DirectorySettings>(builder.Configuration.GetSection("
 builder.Services.AddControllersWithViews();
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<IAuditService, AuditService>();
+//Keyed because two implementations of one interface
+builder.Services.AddKeyedScoped<IDocumentFileSystemService, DocumentFileSystemService>(DependencyKeys.DocumentsService);
+builder.Services.AddKeyedScoped<IDocumentFileSystemService, AuditFileSystemService>(DependencyKeys.AuditService);
 builder.Services.AddSingleton<IDocumentSessionRepository, InMemoryDocumentSessionRepository>();
 builder.Services.AddSingleton<IDocumentSessionService, DocumentSessionService>();
 builder.Services.AddSingleton<DocumentLockService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
