@@ -1,8 +1,31 @@
 using DocumentEditing.Libs;
 using DocumentEditing.Repositories;
 using DocumentEditing.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidIssuer = "DocumentEditing",
+
+        ValidateAudience = true,
+        ValidAudience = "DocumentEditing",
+
+        ValidateLifetime = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("your_secret_key_1234567890987654321")),
+        ValidateIssuerSigningKey = true
+    };
+});
 
 builder.Services.Configure<DirectorySettings>(builder.Configuration.GetSection("Directories"));
 builder.Services.AddControllersWithViews();
@@ -29,6 +52,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapHub<DocumentHub>("/chat");   // ChatHub будет обрабатывать запросы по пути /chat

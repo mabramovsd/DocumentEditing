@@ -1,16 +1,16 @@
 using DocumentEditing.Libs;
 using DocumentEditing.Models;
 using DocumentEditing.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using System.Diagnostics;
 using System.Text.Json;
 
-namespace DocumentEditing.Controllers
+namespace DocumentEditing.Controllers.API
 {
-    [Route("Documents")]
     [ApiController]
-    public class DocumentsController : Controller
+    [Route("Api/Documents")]
+    public class DocumentsController : ControllerBase
     {
         /// <summary>
         /// Folder with documents to edit
@@ -24,7 +24,7 @@ namespace DocumentEditing.Controllers
         private readonly IDocumentFileSystemService _documentFileSystemService;
 
         public DocumentsController(
-            ILogger<DocumentsController> logger, 
+            ILogger<DocumentsController> logger,
             DocumentLockService documentLockService,
             IDocumentSessionService documentSessionService,
             IOptions<DirectorySettings> directorySettings,
@@ -42,77 +42,85 @@ namespace DocumentEditing.Controllers
                 Directory.CreateDirectory(_dir);
         }
 
-        [HttpGet]
-        public IActionResult Index()
+        [HttpGet("Index")]
+        public ActionResult<DocumentsModel> Index()
         {
             var documents = _documentFileSystemService.GetDocumentsList();
             var model = new DocumentsModel { Path = _dir, Documents = documents };
-            return View(model);
+            return Ok(model);
         }
 
         [HttpGet("Edit/{id}")]
-        public IActionResult Edit(string id)
+        [Authorize]
+        public ActionResult<DocumentModel> Edit(string id)
         {
             if (string.IsNullOrEmpty(id))
-                return BadRequest("File name is empty");
+                return BadRequest(new { error = "File name is empty" });
 
             var filePath = Path.Combine(_dir, id);
             if (!id.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
-                return NotFound("File have wrong extension");
+                return NotFound(new { error = "File have wrong extension or not found" });
 
-            bool lockAcquired = _documentLockService.TryAcquireWriteLock(id);
+            bool lockAcquired = false;
+
             try
             {
+                lockAcquired = _documentLockService.TryAcquireWriteLock(id);
+                var user = HttpContext.User?.Identity?.Name ?? "";
+                if (_documentSessionService.CanUserEdit(id, user))
+                {
+                    _documentSessionService.AddEditor(id, user);
+                }
+                else
+                {
+                    lockAcquired = false;
+                }
+
                 var model = DocumentModel.FillDataFromFile(_dir, id);
                 model.IsReadOnly = !lockAcquired;
 
-                if (!lockAcquired)
-                {
-                    ViewBag.Message = "Sorry, document is already opened";
-                }
-
-                return View(model);
+                return Ok(model);
             }
             catch (IOException ex) when (
                 ex is FileNotFoundException ||
                 ex is DirectoryNotFoundException)
             {
+                _logger.LogWarning($"Try to open file that doesn't exist: {id}. Error: {ex.Message}");
+                return NotFound(new { error = $"File '{id}' was not found." });
+            }
+            finally
+            {
                 if (lockAcquired)
                 {
                     _documentLockService.ReleaseWriteLock(id);
                 }
-
-                _logger.LogWarning($"Try to open file that doesn't exist: {id}. Error: {ex.Message}");
-                return NotFound("File not found");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning($"Try to open file wasn't successfull: {id}. Error: {ex.Message}");
-                return BadRequest("Error");
             }
         }
-
 
         [HttpPost("Create")]
         public IActionResult Create([FromBody] SaveDocumentModel model)
         {
             if (string.IsNullOrWhiteSpace(model.FileName))
-                return BadRequest("File Name is empty");
+                return BadRequest(new { error = "File Name is empty" });
 
             var filePath = Path.Combine(_dir, model.FileName);
 
             try
             {
                 _documentSessionService.CreateNewDocument(filePath);
-                //_auditService.AddData(model.FileName, changes);
                 _logger.LogInformation($"File {model.FileName} successfully created");
-
-                return Ok(new { message = "File successfully created", fileName = model.FileName, redirectUrl = "Documents" });
+                //Better than just OK
+                return CreatedAtAction(nameof(Edit), new { id = model.FileName }, null);
+            }
+            catch (Exception ex) when (ex is IOException)
+            {
+                _logger.LogError(ex, $"IO Error when creating file {model.FileName}.");
+                return Conflict(new { error = "File already exists or access denied." });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error when creating file {model.FileName}.");
-                return StatusCode(500, new { error = "Error when creating file" });
+                _logger.LogError(ex, $"Unexpected error when creating file {model.FileName}.");
+                return StatusCode(500, new { error = "Internal server error" });
             }
         }
 
@@ -120,7 +128,7 @@ namespace DocumentEditing.Controllers
         public IActionResult Save([FromBody] SaveDocumentModel model)
         {
             if (model == null || string.IsNullOrWhiteSpace(model.FileName))
-                return BadRequest("Некорректные данные: имя файла обязательно.");
+                return BadRequest("Incorrect Data: Empty file name");
 
             var filePath = Path.Combine(_dir, model.FileName);
 
@@ -132,7 +140,7 @@ namespace DocumentEditing.Controllers
                 if (changes.Count > 0)
                 {
                     _auditService.AddData(model.FileName, changes);
-                    _logger.LogInformation($"Зафиксированы изменения в файле {model.FileName}.");
+                    _logger.LogInformation($"File was chaneged {model.FileName}.");
                 }
 
                 System.IO.File.WriteAllText(filePath, model.Content);
@@ -142,8 +150,8 @@ namespace DocumentEditing.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Ошибка при сохранении файла {model.FileName}.");
-                return StatusCode(500, new { error = "Ошибка при сохранении файла." });
+                _logger.LogError(ex, $"Error when saving file {model.FileName}.");
+                return StatusCode(500, new { error = "Error when saving file" });
             }
         }
 
@@ -170,16 +178,8 @@ namespace DocumentEditing.Controllers
                 Console.WriteLine("Error: " + ex.Message);
             }
 
-            _logger.LogInformation($"Пользователь закрыл документ: {request.FileName}");
+            _logger.LogInformation($"User cloed document: {request.FileName}");
             return Ok();
-        }
-
-        //Disable caching for error messages
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        [HttpGet("Error")]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
     }
 }
