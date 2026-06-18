@@ -1,8 +1,4 @@
-﻿@{
-    ViewData["Title"] = "Documents";
-}
-
-<div class="text-center">
+﻿<div class="text-center">
     <h1 class="display-4">List of documents you can edit</h1>
 
     <table class="table table-striped table-hover" id="DocumentsTable">
@@ -15,15 +11,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var item in Model.Documents)
-            {
-                <tr>
-                    <td><a href="Documents/Edit/@item.FileName">@item.FileName</a></td>
-                    <td>@item.CreationTime.ToString("g")</td>
-                    <td>@item.LastWriteTime.ToString("g")</td>
-                    <td>@item.SizeKB kb</td>
-                </tr>
-            }
+            <tr><td colspan="4">Loading...</td></tr>
         </tbody>
     </table>
 

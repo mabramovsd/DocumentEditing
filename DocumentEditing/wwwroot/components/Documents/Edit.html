@@ -1,16 +1,12 @@
-﻿@{
-    ViewData["Title"] = "Documents";
-}
+﻿<div class="text-center">
+    <h1 class="display-4" id="DocumentHeader"></h1>
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-
-    <textarea id="MainText" style="width:1000px; height: 600px" onblur="updateTextArea()">@Model.Content</textarea>
+    <textarea id="DocMainContent" style="width:1000px; height: 600px" onblur="updateTextArea()"></textarea>
     <br />
     <label id="Editors"/>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
+<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
 <script>
 
     sessionStorage.setItem('file', '@Model.FileName');
@@ -113,4 +109,4 @@
                 return console.error(err.toString());
             });
     }
-</script>
+</script>-->

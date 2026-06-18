@@ -43,57 +43,53 @@ namespace DocumentEditing.Controllers
                 Directory.CreateDirectory(_dir);
         }
 
-        [HttpGet]
-        public IActionResult Index()
+        [HttpGet("Index")]
+        public ActionResult<DocumentsModel> Index()
         {
             var documents = _documentFileSystemService.GetDocumentsList();
             var model = new DocumentsModel { Path = _dir, Documents = documents };
-            return View(model);
+            return Ok(model);
         }
 
         [HttpGet("Edit/{id}")]
         [Authorize]
-        public IActionResult Edit(string id)
+        public ActionResult<DocumentModel> Edit(string id)
         {
             if (string.IsNullOrEmpty(id))
-                return BadRequest("File name is empty");
+                return BadRequest(new { error = "File name is empty" });
 
             var filePath = Path.Combine(_dir, id);
             if (!id.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
-                return NotFound("File have wrong extension");
+                return NotFound(new { error = "File have wrong extension or not found" });
 
             //ToDo: Handle it
             var user = HttpContext.User;
 
-            bool lockAcquired = _documentLockService.TryAcquireWriteLock(id);
+            bool lockAcquired = false;
+
             try
             {
+                lockAcquired = _documentLockService.TryAcquireWriteLock(id);
+
                 var model = DocumentModel.FillDataFromFile(_dir, id);
+
                 model.IsReadOnly = !lockAcquired;
 
-                if (!lockAcquired)
-                {
-                    ViewBag.Message = "Sorry, document is already opened";
-                }
-
-                return View(model);
+                return Ok(model);
             }
             catch (IOException ex) when (
                 ex is FileNotFoundException ||
                 ex is DirectoryNotFoundException)
             {
+                _logger.LogWarning($"Try to open file that doesn't exist: {id}. Error: {ex.Message}");
+                return NotFound(new { error = $"File '{id}' was not found." });
+            }
+            finally
+            {
                 if (lockAcquired)
                 {
                     _documentLockService.ReleaseWriteLock(id);
                 }
-
-                _logger.LogWarning($"Try to open file that doesn't exist: {id}. Error: {ex.Message}");
-                return NotFound("File not found");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning($"Try to open file wasn't successfull: {id}. Error: {ex.Message}");
-                return BadRequest("Error");
             }
         }
 

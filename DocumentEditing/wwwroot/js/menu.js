@@ -9,7 +9,7 @@ export function setupMenuNavigation(apiClient) {
         // Click on Docs
         if (link && link.getAttribute('href')?.startsWith('/Documents')) {
             event.preventDefault();
-            loadComponent('Documents/Index', 'app');
+            await loadAndFillDocumentsComponent('app', apiClient);
             setPageTitle("Documents - DocumentEditing");
         }
         // Click on Audit
@@ -70,7 +70,39 @@ async function loadAndFillAuditComponent(containerId, apiClient) {
     const tbody = container.querySelector('#AuditTable tbody');
 
     try {
-        const response = await apiClient.get('Audit/Index');
+        const response = await apiClient.get('Api/Audit/Index');
+
+        //Filling Table Body
+        tbody.innerHTML = '';
+        response.data.documents.forEach(item => {
+            const rowHtml = `
+                <tr>
+                    <td><a href="#" class="audit-link" data-filename="${item.fileName}">${item.fileName}</a></td>
+                    <td>${new Date(item.creationTime).toLocaleString()}</td>
+                    <td>${new Date(item.lastWriteTime).toLocaleString()}</td>
+                    <td>${item.sizeKB} kb</td>
+                </tr>
+            `;
+            tbody.insertAdjacentHTML('beforeend', rowHtml);
+        });
+
+    } catch (error) {
+        console.error("Failed to load audit data:", error);
+        tbody.innerHTML = '<tr><td colspan="4">Failed to load audit data.</td></tr>';
+    }
+}
+/**
+ * Rendering of Documents page
+ */
+async function loadAndFillDocumentsComponent(containerId, apiClient) {
+    //HTML-template (table header)
+    await loadComponent('Documents/Index', containerId);
+
+    const container = document.getElementById(containerId);
+    const tbody = container.querySelector('#DocumentsTable tbody');
+
+    try {
+        const response = await apiClient.get('Documents/Index');
 
         //Filling Table Body
         tbody.innerHTML = '';
@@ -87,7 +119,7 @@ async function loadAndFillAuditComponent(containerId, apiClient) {
         });
 
     } catch (error) {
-        console.error("Failed to load audit data:", error);
-        tbody.innerHTML = '<tr><td colspan="4">Failed to load audit data.</td></tr>';
+        console.error("Failed to load documents data:", error);
+        tbody.innerHTML = '<tr><td colspan="4">Failed to load documents data.</td></tr>';
     }
 }

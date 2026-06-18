@@ -110,29 +110,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setupMenuNavigation(apiClient); 
 
-    // --- Обработчик клика по файлу в списке ---
-    // Используем делегирование, чтобы ловить клики по ссылкам внутри таблицы
+    // Click on doc handler
     document.body.addEventListener('click', async (event) => {
-        if (event.target.classList.contains('doc-link')) {
-            console.log(event.target);
+        if (event.target.classList.contains('audit-link')) {
             event.preventDefault();
             const filename = event.target.dataset.filename;
 
-            // 2. Загружаем компонент редактора
+            // Loading container
             await loadComponent('Audit/Details', 'app');
-
             const container = document.getElementById('app');
             const header = container.querySelector('#AuditDetailsHeader');
             const content = container.querySelector('#AuditMainContent');
 
-            // 3. После того как редактор появился, загружаем данные с сервера
+            // Page content rendering
             try {
-                const response = await apiClient.get(`/Audit/Details/${filename}`);
+                const response = await apiClient.get(`/Api/Audit/Details/${filename}`);
                 setPageTitle("Audit of document - DocumentEditing");
                 header.textContent = 'Changes of ' + response.data.fileName;
                 content.textContent = response.data.content || '';
             } catch (error) {
-                alert(error.response?.data?.error || "Произошла ошибка");
+                alert(error.response?.data?.error || "Error when load document");
+            }
+        }
+        if (event.target.classList.contains('doc-link')) {
+            event.preventDefault();
+            const filename = event.target.dataset.filename;
+
+            // Loading container
+            await loadComponent('Documents/Edit', 'app');
+            const container = document.getElementById('app');
+            const header = container.querySelector('#DocumentHeader');
+            const content = container.querySelector('#DocMainContent');
+
+            // Page content rendering
+            try {
+                const response = await apiClient.get(`/Documents/Edit/${filename}`);
+                setPageTitle("Editing of document - DocumentEditing");
+                console.log(response);
+                header.textContent = 'Editing of ' + response.data.fileName;
+                content.textContent = response.data.content || '';
+            } catch (error) {
+                alert(error.response?.data?.error || "Error when load document");
             }
         }
     });

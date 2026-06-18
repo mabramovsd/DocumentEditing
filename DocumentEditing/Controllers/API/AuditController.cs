@@ -5,10 +5,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using System.Diagnostics;
 
-namespace DocumentEditing.Controllers
+namespace DocumentEditing.Controllers.API
 {
     [ApiController]
-    [Route("Audit")]
+    [Route("Api/Audit")]
     public class AuditController : ControllerBase
     {
         /// <summary>
