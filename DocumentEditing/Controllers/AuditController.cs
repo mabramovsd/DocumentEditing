@@ -31,13 +31,12 @@ namespace DocumentEditing.Controllers
                 Directory.CreateDirectory(_dir);
         }
 
-        [HttpGet]
-        public IActionResult Index()
+        [HttpGet("Index")]
+        public ActionResult<DocumentsModel> GetDocuments()
         {
             var documents = _documentFileSystemService.GetDocumentsList();
-
             var model = new DocumentsModel { Path = _dir, Documents = documents };
-            return View(model);
+            return Ok(model);
         }
 
         [HttpGet("Details/{id}")]

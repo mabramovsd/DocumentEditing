@@ -1,4 +1,6 @@
-﻿//Authentification
+﻿import { setupMenuNavigation } from './menu.js';
+
+//Authentification
 const apiClient = axios.create({
     baseURL: '/'
 });
@@ -34,7 +36,6 @@ async function loadComponent(componentPath, containerId) {
         document.getElementById(containerId).innerHTML = `<p>Ошибка загрузки компонента: ${error.message}</p>`;
     }
 }
-
 
 async function loginToApi(username) {
     //empty password because of model contract
@@ -107,15 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- Обработчик клика по ссылке "Docs" (в хедере) ---
-    // Мы можем перехватить клики по любым ссылкам на странице
-    document.body.addEventListener('click', async (event) => {
-        // Проверяем, что кликнули по нашей ссылке "Docs"
-        if (event.target.matches('a[href="/Documents/Index"]')) {
-            event.preventDefault(); // Отменяем стандартное поведение
-            loadComponent('Documents/Index/list', 'app'); // Загружаем список документов
-        }
-    });
+    setupMenuNavigation(apiClient); 
 
     // --- Обработчик клика по файлу в списке ---
     // Используем делегирование, чтобы ловить клики по ссылкам внутри таблицы
