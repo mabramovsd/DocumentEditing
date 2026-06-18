@@ -34,7 +34,7 @@ async function loadComponent(componentPath, containerId) {
 
     } catch (error) {
         console.error(error);
-        document.getElementById(containerId).innerHTML = `<p>Ошибка загрузки компонента: ${error.message}</p>`;
+        document.getElementById(containerId).innerHTML = `<p>Error when loading component: ${error.message}</p>`;
     }
 }
 
@@ -96,33 +96,6 @@ function setPageTitle(title) {
 }
 
 
-// send signal to close doc
-async function sendCloseSignal() {
-    const fileName = sessionStorage.getItem('file');
-    const user = sessionStorage.getItem('user');
-
-    if (!fileName) {
-        console.log('No file to close signal for.');
-        return;
-    }
-
-    const messageToSend = JSON.stringify({ fileName, user });
-
-    try {
-        await fetch('/Documents/Close', {
-            method: 'POST',
-            body: messageToSend,
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            keepalive: true
-        });
-
-        console.log('Successfully sent close signal.');
-    } catch (error) {
-        console.error("Error while sending close signal:", error.message);
-    }
-}
 async function updateTextArea() {
     const textarea = document.getElementById('DocMainContent');
     const content = textarea.value;
@@ -185,7 +158,7 @@ async function updateTextArea() {
         });
 }
 
-// --- Основная логика приложения ---
+// Main logic
 document.addEventListener('DOMContentLoaded', () => {
     const appContainer = document.getElementById('app');
 
@@ -199,6 +172,25 @@ document.addEventListener('DOMContentLoaded', () => {
             appContainer.removeEventListener('transitionend', handler);
             initializeUser();
         });
+    });
+
+    window.addEventListener('beforeunload', async (event) => {
+        const currentFileName = sessionStorage.getItem('file');
+        const currentUser = sessionStorage.getItem('user');
+        if (!currentFileName || !currentUser) {
+            return;
+        }
+
+        try {
+            await fetch('/Documents/Close', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileName: currentFileName, user: currentUser })
+            });
+            console.log('Successfully sent close signal for:', currentFileName);
+        } catch (error) {
+            console.error("Error while sending close signal:", error.message);
+        }
     });
 
     // Click on doc handler
@@ -266,12 +258,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Page content rendering
             try {
-                const response = await apiClient.get(`/Documents/Edit/${filename}`);
+                const response = await apiClient.get(`Api/Documents/Edit/${filename}`);
                 setPageTitle("Editing of document - DocumentEditing");
                 console.log(response);
                 header.textContent = 'Editing of ' + response.data.fileName;
                 content.textContent = response.data.content || '';
                 sessionStorage.setItem('file', response.data.fileName);
+                
+
+                let isReadOnly = response.data.isReadOnly == 'True';
+                if (isReadOnly) {
+                    document.getElementById('DocMainContent').readOnly = true;
+                }
+
             } catch (error) {
                 alert(error.response?.data?.error || "Error when load document");
             }

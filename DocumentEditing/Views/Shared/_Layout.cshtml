@@ -20,13 +20,13 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link text-dark" href="/Home">Home</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Documents" asp-action="Index">Docs</a>
+                            <a class="nav-link text-dark" href="/Documents">Docs</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Audit" asp-action="Index">Audit</a>
+                            <a class="nav-link text-dark" href="/Audit">Audit</a>
                         </li>
                     </ul>
                 </div>
@@ -40,7 +40,6 @@
     </div>
 
     <div class="container">
-        <!-- Делаем RenderBody необязательным -->
         @RenderBody()
     </div>
 
@@ -53,6 +52,7 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
     <script src="~/js/site.js" asp-append-version="true" type="module"></script>
 </body>
 </html>

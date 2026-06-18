@@ -4,14 +4,13 @@ using DocumentEditing.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using System.Diagnostics;
 using System.Text.Json;
 
-namespace DocumentEditing.Controllers
+namespace DocumentEditing.Controllers.API
 {
-    [Route("Documents")]
     [ApiController]
-    public class DocumentsController : Controller
+    [Route("Api/Documents")]
+    public class DocumentsController : ControllerBase
     {
         /// <summary>
         /// Folder with documents to edit
@@ -25,7 +24,7 @@ namespace DocumentEditing.Controllers
         private readonly IDocumentFileSystemService _documentFileSystemService;
 
         public DocumentsController(
-            ILogger<DocumentsController> logger, 
+            ILogger<DocumentsController> logger,
             DocumentLockService documentLockService,
             IDocumentSessionService documentSessionService,
             IOptions<DirectorySettings> directorySettings,
@@ -174,16 +173,8 @@ namespace DocumentEditing.Controllers
                 Console.WriteLine("Error: " + ex.Message);
             }
 
-            _logger.LogInformation($"Пользователь закрыл документ: {request.FileName}");
+            _logger.LogInformation($"User cloed document: {request.FileName}");
             return Ok();
-        }
-
-        //Disable caching for error messages
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        [HttpGet("Error")]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
     }
 }

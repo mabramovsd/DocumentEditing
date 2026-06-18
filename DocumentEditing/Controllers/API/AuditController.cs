@@ -3,7 +3,6 @@ using DocumentEditing.Models;
 using DocumentEditing.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using System.Diagnostics;
 
 namespace DocumentEditing.Controllers.API
 {

@@ -40,7 +40,6 @@ function setPageTitle(title) {
 async function loadComponent(componentPath, containerId) {
     try {
         const url = `components/${componentPath}.html`;
-
         const response = await fetch(url);
         if (!response.ok) {
             throw new Error(`Failed to load component from ${url}`);
@@ -102,7 +101,7 @@ export async function loadAndFillDocumentsComponent(containerId, apiClient) {
     const tbody = container.querySelector('#DocumentsTable tbody');
 
     try {
-        const response = await apiClient.get('Documents/Index');
+        const response = await apiClient.get('Api/Documents/Index');
 
         //Filling Table Body
         tbody.innerHTML = '';
