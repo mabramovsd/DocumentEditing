@@ -265,11 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 content.textContent = response.data.content || '';
                 sessionStorage.setItem('file', response.data.fileName);
                 
-
-                let isReadOnly = response.data.isReadOnly == 'True';
-                if (isReadOnly) {
-                    document.getElementById('DocMainContent').readOnly = true;
-                }
+                document.getElementById('DocMainContent').readOnly = response.data.isReadOnly;
 
             } catch (error) {
                 alert(error.response?.data?.error || "Error when load document");

@@ -61,17 +61,22 @@ namespace DocumentEditing.Controllers.API
             if (!id.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
                 return NotFound(new { error = "File have wrong extension or not found" });
 
-            //ToDo: Handle it
-            var user = HttpContext.User;
-
             bool lockAcquired = false;
 
             try
             {
                 lockAcquired = _documentLockService.TryAcquireWriteLock(id);
+                var user = HttpContext.User?.Identity?.Name ?? "";
+                if (_documentSessionService.CanUserEdit(id, user))
+                {
+                    _documentSessionService.AddEditor(id, user);
+                }
+                else
+                {
+                    lockAcquired = false;
+                }
 
                 var model = DocumentModel.FillDataFromFile(_dir, id);
-
                 model.IsReadOnly = !lockAcquired;
 
                 return Ok(model);
