@@ -94,7 +94,7 @@ async function loadAndFillAuditComponent(containerId, apiClient) {
 /**
  * Rendering of Documents page
  */
-async function loadAndFillDocumentsComponent(containerId, apiClient) {
+export async function loadAndFillDocumentsComponent(containerId, apiClient) {
     //HTML-template (table header)
     await loadComponent('Documents/Index', containerId);
 

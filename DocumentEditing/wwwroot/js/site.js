@@ -1,4 +1,5 @@
 ﻿import { setupMenuNavigation } from './menu.js';
+import { loadAndFillDocumentsComponent } from './menu.js';
 
 //Authentification
 const apiClient = axios.create({
@@ -98,6 +99,8 @@ function setPageTitle(title) {
 document.addEventListener('DOMContentLoaded', () => {
     const appContainer = document.getElementById('app');
 
+    setupMenuNavigation(apiClient);
+
     // Start page
     loadComponent('Home/Index', 'app').then(() => {
         setPageTitle("Main Page - DocumentEditing");
@@ -108,10 +111,39 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    setupMenuNavigation(apiClient); 
-
     // Click on doc handler
     document.body.addEventListener('click', async (event) => {
+
+        if (event.target.id === 'CreateNewBtn' || event.target.closest('#CreateNewBtn')) {
+            const fileName = prompt("Please enter file name:");
+            const userFromStorage = sessionStorage.getItem('user');
+
+            if (fileName === null || fileName.trim() === '') {
+                alert("File Name can't be empty");
+                return;
+            }
+
+            // Add extension
+            const finalFileName = fileName.trim().match(/\.[0-9a-z]+$/i) ? fileName.trim() : fileName.trim() + '.txt';
+
+            fetch('Documents/Create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileName: finalFileName, content: "", user: userFromStorage })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error when creating file');
+                    }
+                })
+                .then(data => {
+                    loadAndFillDocumentsComponent('app', apiClient);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
         if (event.target.classList.contains('audit-link')) {
             event.preventDefault();
             const filename = event.target.dataset.filename;

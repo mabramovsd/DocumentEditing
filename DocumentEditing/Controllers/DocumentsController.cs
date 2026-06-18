@@ -93,27 +93,30 @@ namespace DocumentEditing.Controllers
             }
         }
 
-
         [HttpPost("Create")]
         public IActionResult Create([FromBody] SaveDocumentModel model)
         {
             if (string.IsNullOrWhiteSpace(model.FileName))
-                return BadRequest("File Name is empty");
+                return BadRequest(new { error = "File Name is empty" });
 
             var filePath = Path.Combine(_dir, model.FileName);
 
             try
             {
                 _documentSessionService.CreateNewDocument(filePath);
-                //_auditService.AddData(model.FileName, changes);
                 _logger.LogInformation($"File {model.FileName} successfully created");
-
-                return Ok(new { message = "File successfully created", fileName = model.FileName, redirectUrl = "Documents" });
+                //Better than just OK
+                return CreatedAtAction(nameof(Edit), new { id = model.FileName }, null);
+            }
+            catch (Exception ex) when (ex is IOException)
+            {
+                _logger.LogError(ex, $"IO Error when creating file {model.FileName}.");
+                return Conflict(new { error = "File already exists or access denied." });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error when creating file {model.FileName}.");
-                return StatusCode(500, new { error = "Error when creating file" });
+                _logger.LogError(ex, $"Unexpected error when creating file {model.FileName}.");
+                return StatusCode(500, new { error = "Internal server error" });
             }
         }
 
