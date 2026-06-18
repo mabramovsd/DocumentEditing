@@ -7,8 +7,9 @@ using System.Diagnostics;
 
 namespace DocumentEditing.Controllers
 {
+    [ApiController]
     [Route("Audit")]
-    public class AuditController : Controller
+    public class AuditController : ControllerBase
     {
         /// <summary>
         /// Folder with documents to edit
@@ -40,31 +41,29 @@ namespace DocumentEditing.Controllers
         }
 
         [HttpGet("Details/{id}")]
-        public IActionResult Details(string id)
+        public ActionResult<DocumentModel> GetDocumentDetails(string id)
         {
             if (string.IsNullOrEmpty(id))
-                return BadRequest("File name is empty");
+                return BadRequest(new { error = "File name is empty" });
 
             if (!id.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
-                return NotFound("File have wrong extension");
-            try 
+                return NotFound(new { error = "File not found or has wrong extension" });
+
+            try
             {
                 var model = DocumentModel.FillDataFromFile(_dir, id);
-                return View(model);
+                return Ok(model);
             }
-            catch (Exception ex)
+            catch (FileNotFoundException ex)
             {
-                _logger.LogWarning($"Try to open file wasn't successfull: {id}. Error: {ex.Message}");
-                return BadRequest("Error");
+                _logger.LogWarning($"File not found: {id}. Error: {ex.Message}");
+                return NotFound(new { error = $"File '{id}' was not found." });
             }
-        }
-
-        //Disable caching for error messages
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        [HttpGet("Error")]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            catch (IOException ex)
+            {
+                _logger.LogWarning($"IO Error while opening file: {id}. Error: {ex.Message}");
+                return StatusCode(500, new { error = "Internal server error while reading the file." });
+            }
         }
     }
 }

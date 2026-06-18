@@ -114,17 +114,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // Используем делегирование, чтобы ловить клики по ссылкам внутри таблицы
     document.body.addEventListener('click', async (event) => {
         if (event.target.classList.contains('doc-link')) {
+            console.log(event.target);
             event.preventDefault();
             const filename = event.target.dataset.filename;
 
             // 2. Загружаем компонент редактора
-            await loadComponent('Documents/Edit/editor', 'app');
+            await loadComponent('Audit/Details', 'app');
+
+            const container = document.getElementById('app');
+            const header = container.querySelector('#AuditDetailsHeader');
+            const content = container.querySelector('#AuditMainContent');
 
             // 3. После того как редактор появился, загружаем данные с сервера
             try {
-                const response = await apiClient.get(`/Documents/Edit/${filename}`);
-                document.getElementById('fileNameDisplay').textContent = filename;
-                document.getElementById('contentEditor').value = response.data.Content || '';
+                const response = await apiClient.get(`/Audit/Details/${filename}`);
+                setPageTitle("Audit of document - DocumentEditing");
+                header.textContent = 'Changes of ' + response.data.fileName;
+                content.textContent = response.data.content || '';
             } catch (error) {
                 alert(error.response?.data?.error || "Произошла ошибка");
             }
