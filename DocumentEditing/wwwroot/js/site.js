@@ -95,6 +95,96 @@ function setPageTitle(title) {
     document.title = title;
 }
 
+
+// send signal to close doc
+async function sendCloseSignal() {
+    const fileName = sessionStorage.getItem('file');
+    const user = sessionStorage.getItem('user');
+
+    if (!fileName) {
+        console.log('No file to close signal for.');
+        return;
+    }
+
+    const messageToSend = JSON.stringify({ fileName, user });
+
+    try {
+        await fetch('/Documents/Close', {
+            method: 'POST',
+            body: messageToSend,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            keepalive: true
+        });
+
+        console.log('Successfully sent close signal.');
+    } catch (error) {
+        console.error("Error while sending close signal:", error.message);
+    }
+}
+async function updateTextArea() {
+    const textarea = document.getElementById('DocMainContent');
+    const content = textarea.value;
+
+    // Some data from session
+    const fileName = sessionStorage.getItem('file');
+    const userFromStorage = sessionStorage.getItem('user');
+
+    if (!fileName) {
+        console.error('File name not found in session storage.');
+        return;
+    }
+
+    const messageToSend = JSON.stringify({ fileName, content, user: userFromStorage });
+
+    try {
+        const response = await fetch('/Documents/Save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: messageToSend
+        });
+
+        if (response.ok) {
+            console.log('Successfully saved!');
+        } else {
+            console.log('Error while saving');
+        }
+    } catch (error) {
+        console.error("Error while saving: ", error.message);
+        document.getElementById("Editors").innerHTML = "Unknown editors";
+    }
+
+    const hubConnection = new signalR.HubConnectionBuilder()
+        .withUrl("/chat")
+        .build();
+
+
+    hubConnection.on("Receive", function (message) {
+        try {
+            console.log('received');
+            const parsedMessage = JSON.parse(message);
+            console.log(parsedMessage);
+            let users = parsedMessage?.ActiveEditors ?? [];
+            users = users.join(", ");
+            document.getElementById("Editors").innerHTML = "Now edit: " + users;
+        } catch (error) {
+            console.error("Error while parsing message:", error.message);
+            document.getElementById("Editors").innerHTML = "Unknown editors";
+        }
+    });
+    hubConnection.start()
+        .then(function () {
+            hubConnection.invoke("Send", messageToSend)
+                .catch(function (err) {
+                    return console.error(err.toString());
+                });
+        })
+        .catch(function (err) {
+            return console.error(err.toString());
+        });
+}
+
 // --- Основная логика приложения ---
 document.addEventListener('DOMContentLoaded', () => {
     const appContainer = document.getElementById('app');
@@ -181,9 +271,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log(response);
                 header.textContent = 'Editing of ' + response.data.fileName;
                 content.textContent = response.data.content || '';
+                sessionStorage.setItem('file', response.data.fileName);
             } catch (error) {
                 alert(error.response?.data?.error || "Error when load document");
             }
+        }
+    });
+    appContainer.addEventListener('focusout', function (event) {
+        if (event.target.id === 'DocMainContent' && !appContainer.contains(event.relatedTarget)) {
+            updateTextArea();
         }
     });
 });

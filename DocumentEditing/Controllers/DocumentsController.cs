@@ -124,7 +124,7 @@ namespace DocumentEditing.Controllers
         public IActionResult Save([FromBody] SaveDocumentModel model)
         {
             if (model == null || string.IsNullOrWhiteSpace(model.FileName))
-                return BadRequest("Некорректные данные: имя файла обязательно.");
+                return BadRequest("Incorrect Data: Empty file name");
 
             var filePath = Path.Combine(_dir, model.FileName);
 
@@ -136,7 +136,7 @@ namespace DocumentEditing.Controllers
                 if (changes.Count > 0)
                 {
                     _auditService.AddData(model.FileName, changes);
-                    _logger.LogInformation($"Зафиксированы изменения в файле {model.FileName}.");
+                    _logger.LogInformation($"File was chaneged {model.FileName}.");
                 }
 
                 System.IO.File.WriteAllText(filePath, model.Content);
@@ -146,8 +146,8 @@ namespace DocumentEditing.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Ошибка при сохранении файла {model.FileName}.");
-                return StatusCode(500, new { error = "Ошибка при сохранении файла." });
+                _logger.LogError(ex, $"Error when saving file {model.FileName}.");
+                return StatusCode(500, new { error = "Error when saving file" });
             }
         }
 
