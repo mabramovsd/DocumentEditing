@@ -8,9 +8,9 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace DocumentEditing.Controllers
+namespace DocumentEditing.Controllers.API
 {
-    [Route("Auth")]
+    [Route("Api/Auth")]
     [ApiController]
     public class AuthController : Controller
     {
