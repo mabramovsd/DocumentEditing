@@ -43,7 +43,7 @@ async function loginToApi(username) {
     const messageToSend = JSON.stringify({ email: username, password: '' });
 
     try {
-        const response = await fetch('/Auth/Login', {
+        const response = await fetch('Api/Auth/Login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: messageToSend
@@ -86,6 +86,8 @@ async function initializeUser() {
             sessionStorage.setItem('user', 'guest');
             console.log('User did not provide a name.');
         }
+
+        document.getElementById("UserNameDiv").innerHTML = "Hello, " + name;
     } else {
         console.log(`Welcome back, ${name}.`);
     }
@@ -112,7 +114,7 @@ async function updateTextArea() {
     const messageToSend = JSON.stringify({ fileName, content, user: userFromStorage });
 
     try {
-        const response = await fetch('/Documents/Save', {
+        const response = await fetch('Api/Documents/Save', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: messageToSend
@@ -158,6 +160,18 @@ async function updateTextArea() {
         });
 }
 
+function showHideUserButtons(userLoggedId) {
+    const loginBtn = document.getElementById('LoginBtn');
+    const changeUserBtn = document.getElementById('ChangeUserBtn');
+    if (loginBtn) {
+        loginBtn.style.display = userLoggedId ? 'none' : 'inline-block';
+    }
+
+    if (changeUserBtn) {
+        changeUserBtn.style.display = userLoggedId ? 'inline-block' : 'none';
+    }
+}
+
 // Main logic
 document.addEventListener('DOMContentLoaded', () => {
     const appContainer = document.getElementById('app');
@@ -170,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
         //Some animation to show prompt after rendering
         appContainer.addEventListener('transitionend', function handler() {
             appContainer.removeEventListener('transitionend', handler);
-            initializeUser();
+            showHideUserButtons(false);
         });
     });
 
@@ -195,6 +209,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Click on doc handler
     document.body.addEventListener('click', async (event) => {
+
+        if (event.target.id === 'LoginBtn' || event.target.closest('#LoginBtn')) {
+            initializeUser();
+            showHideUserButtons(true);
+        }
+
+        if (event.target.id === 'ChangeUserBtn' || event.target.closest('#ChangeUserBtn')) {
+            sessionStorage.removeItem('user');
+            initializeUser();
+            showHideUserButtons(true);
+        }
 
         if (event.target.id === 'CreateNewBtn' || event.target.closest('#CreateNewBtn')) {
             const fileName = prompt("Please enter file name:");
